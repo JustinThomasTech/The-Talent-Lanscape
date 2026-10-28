@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Talent Landscape | Smollan Technologies</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background-color: #05070B;
+      color: #E2E8F0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .accent-border {
+      border: 1px solid #1E293B;
+    }
+    .hover-glow:hover {
+      border-color: #0077C8;
+      box-shadow: 0 0 15px rgba(0, 119, 200, 0.25);
+    }
+    .chart-container {
+      position: relative;
+      height: 240px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Navigation Bar -->
+  <header class="border-b border-gray-800 bg-[#090D16] sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-6">
+        <div class="bg-white px-3 py-1.5 rounded border border-gray-300">
+          <img src="Smollan Technologies Logo_Smollan Technologies - Blue.png" alt="Smollan Technologies" class="h-8 object-contain">
+        </div>
+        <div class="border-l border-gray-700 pl-6">
+          <h1 class="text-xl font-bold tracking-tight text-white uppercase">The Talent Landscape</h1>
+          <p class="text-xs text-gray-400">Internal Talent Architecture & Analytics</p>
+        </div>
+      </div>
+
+      <nav class="flex items-center space-x-2">
+        <button id="nav-hub" onclick="switchTab('hub')" class="px-4 py-2 text-sm font-semibold rounded bg-[#0077C8] text-white">Talent Hub</button>
+        <button id="nav-directory" onclick="switchTab('directory')" class="px-4 py-2 text-sm font-semibold rounded text-gray-300 hover:text-white hover:bg-gray-800">Team Directory</button>
+        <button id="nav-vacancies" onclick="switchTab('vacancies')" class="px-4 py-2 text-sm font-semibold rounded text-gray-300 hover:text-white hover:bg-gray-800">Vacancies</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
+
+    <!-- VIEW 1: TALENT HUB (EXCO DASHBOARD) -->
+    <section id="view-hub" class="space-y-8">
+      <!-- High Level Metrics -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="p-5 bg-[#0B111E] rounded accent-border hover-glow transition-all">
+          <div class="text-xs uppercase text-gray-400 font-medium tracking-wider">Total Headcount</div>
+          <div id="stat-headcount" class="text-3xl font-bold text-white mt-2">--</div>
+        </div>
+        <div class="p-5 bg-[#0B111E] rounded accent-border hover-glow transition-all">
+          <div class="text-xs uppercase text-gray-400 font-medium tracking-wider">Promotions (YTD)</div>
+          <div id="stat-promotions" class="text-3xl font-bold text-white mt-2">--</div>
+        </div>
+        <div class="p-5 bg-[#0B111E] rounded accent-border hover-glow transition-all">
+          <div class="text-xs uppercase text-gray-400 font-medium tracking-wider">Terminations (YTD)</div>
+          <div id="stat-terminations" class="text-3xl font-bold text-white mt-2">--</div>
+        </div>
+        <div onclick="switchTab('vacancies')" class="p-5 bg-[#0B111E] rounded accent-border hover-glow transition-all cursor-pointer border-blue-900/60">
+          <div class="text-xs uppercase text-blue-400 font-medium tracking-wider flex justify-between">
+            <span>Open Vacancies</span>
+            <span class="text-[10px] bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded">View Matching &rarr;</span>
+          </div>
+          <div id="stat-vacancies" class="text-3xl font-bold text-[#0077C8] mt-2">--</div>
+        </div>
+      </div>
+
+      <!-- Core Demographics & Composition Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="p-5 bg-[#0B111E] rounded accent-border">
+          <h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wider mb-4">Headcount by Function</h2>
+          <div class="chart-container"><canvas id="chartFunction"></canvas></div>
+        </div>
+        <div class="p-5 bg-[#0B111E] rounded accent-border">
+          <h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wider mb-4">Talent Grid Distribution</h2>
+          <div class="chart-container"><canvas id="chartGrid"></canvas></div>
+        </div>
+        <div class="p-5 bg-[#0B111E] rounded accent-border">
+          <h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wider mb-4">Gender Distribution</h2>
+          <div class="chart-container"><canvas id="chartGender"></canvas></div>
+        </div>
+        <div class="p-5 bg-[#0B111E] rounded accent-border">
+          <h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wider mb-4">Race / Ethnicity Profile (B-BBEE)</h2>
+          <div class="chart-container"><canvas id="chartRace"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Macro Themes and Insights -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="p-5 bg-[#0B111E] rounded accent-border">
+          <h3 class="text-xs uppercase text-gray-400 font-semibold mb-3 tracking-wider">Top Org Strengths</h3>
+          <div id="hub-strengths" class="flex flex-wrap gap-2"></div>
+        </div>
+        <div class="p-5 bg-[#0B111E] rounded accent-border">
+          <h3 class="text-xs uppercase text-gray-400 font-semibold mb-3 tracking-wider">Common Development Gaps</h3>
+          <div id="hub-gaps" class="space-y-2 text-sm text-gray-300"></div>
+        </div>
+        <div class="p-5 bg-[#0B111E] rounded accent-border">
+          <h3 class="text-xs uppercase text-amber-400 font-semibold mb-3 tracking-wider">Retention Focus (Flight Risk)</h3>
+          <div id="hub-flight-risk" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: TEAM DIRECTORY (ACCORDION) -->
+    <section id="view-directory" class="hidden space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-white uppercase tracking-tight">Functional Roster</h2>
+        <p class="text-sm text-gray-400">Drill down by business function and role to examine individual profiles.</p>
+      </div>
+      <div id="directory-tree" class="space-y-4"></div>
+    </section>
+
+    <!-- VIEW 3: VACANCIES & MATCHMAKER -->
+    <section id="view-vacancies" class="hidden space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-white uppercase tracking-tight">Active Vacancies & Internal Mobility</h2>
+        <p class="text-sm text-gray-400">Hover or click a vacancy to evaluate mapped internal candidates matching role competencies.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 space-y-3" id="vacancies-list"></div>
+        <div class="lg:col-span-2 p-6 bg-[#0B111E] rounded accent-border min-h-[400px]" id="matchmaker-panel">
+          <h3 class="text-sm font-semibold uppercase text-gray-400 tracking-wider">Internal Match Analysis</h3>
+          <div id="matchmaker-content" class="mt-4 text-gray-500 text-sm">Select a role on the left to run matching algorithms against current employee profiles.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- PROFILE MODAL OVERLAY -->
+  <div id="profile-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#0B111E] border border-gray-700 w-full max-w-3xl rounded shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-gray-800 flex justify-between items-start">
+        <div>
+          <div class="flex items-center space-x-3">
+            <h2 id="modal-name" class="text-2xl font-bold text-white"></h2>
+            <span id="modal-grid-tag" class="text-xs px-2 py-0.5 rounded font-medium bg-blue-950 text-blue-300 border border-blue-800"></span>
+          </div>
+          <div class="text-sm text-gray-400 mt-1">
+            <span id="modal-role"></span> &bull; <span id="modal-function"></span> &bull; Manager: <span id="modal-manager"></span>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl font-mono leading-none">&times;</button>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-[#05070B] rounded accent-border">
+            <div class="text-xs uppercase text-gray-500 font-medium">Core Strengths</div>
+            <p id="modal-strengths" class="text-sm text-gray-200 mt-1"></p>
+          </div>
+          <div class="p-4 bg-[#05070B] rounded accent-border">
+            <div class="text-xs uppercase text-gray-500 font-medium">Development Gaps</div>
+            <p id="modal-gaps" class="text-sm text-gray-200 mt-1"></p>
+          </div>
+        </div>
+
+        <div class="p-4 bg-[#05070B] rounded accent-border">
+          <div class="text-xs uppercase text-gray-500 font-medium">Manager Support Needed</div>
+          <p id="modal-support" class="text-sm text-gray-200 mt-1"></p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-[#05070B] rounded border border-blue-950">
+            <div class="text-xs uppercase text-blue-400 font-medium">Desired Internal Role</div>
+            <p id="modal-internal-role" class="text-sm text-white mt-1 font-semibold"></p>
+          </div>
+          <div class="p-4 bg-[#05070B] rounded border border-gray-800">
+            <div class="text-xs uppercase text-gray-400 font-medium">Target External Role</div>
+            <p id="modal-external-role" class="text-sm text-gray-300 mt-1"></p>
+          </div>
+        </div>
+
+        <div class="p-4 bg-gradient-to-r from-blue-950/30 to-transparent rounded border border-blue-900/40 space-y-3">
+          <div class="text-xs uppercase text-blue-400 font-bold tracking-wider">Talent Trajectory Projections</div>
+          <div>
+            <div class="text-xs text-gray-400 font-medium">Short-Term Trajectory:</div>
+            <p id="modal-short-traj" class="text-sm text-gray-200 mt-0.5"></p>
+          </div>
+          <div>
+            <div class="text-xs text-gray-400 font-medium">Long-Term Trajectory:</div>
+            <p id="modal-long-traj" class="text-sm text-gray-200 mt-0.5"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- DATA STATE (Can be swapped to fetch from Google Sheet API) ---
+    const talentData = [
+      {
+        id: "emp-1",
+        name: "Sipho Ndlovu",
+        function: "Engineering",
+        role: "Senior Backend Developer",
+        manager: "Kgomotso M.",
+        tenure: "3 yrs",
+        gender: "Male",
+        race: "Black African",
+        strengths: ["Node.js", "System Architecture", "Microservices", "PostgreSQL"],
+        gaps: "Enterprise Cloud Architecture (GCP), Team Mentorship",
+        managerSupport: "Requires allocation of technical lead duties on Q3 platform rework.",
+        desiredInternal: "Principal Engineer",
+        desiredExternal: "Staff Infrastructure Architect",
+        talentGrid: "Ready Now Talent",
+        flightRisk: "Low",
+        shortTraj: "Step up to Technical Lead over Payments API project.",
+        longTraj: "Principal Architect responsible for enterprise-wide infrastructure."
+      },
+      {
+        id: "emp-2",
+        name: "Chloe Van Der Merwe",
+        function: "Engineering",
+        role: "Mid-Level Frontend Developer",
+        manager: "Kgomotso M.",
+        tenure: "1.5 yrs",
+        gender: "Female",
+        race: "White",
+        strengths: ["React", "UI/UX Prototyping", "Tailwind CSS", "TypeScript"],
+        gaps: "Testing Automation (Cypress), High-Load State Optimization",
+        managerSupport: "Needs senior code review support and testing framework training.",
+        desiredInternal: "Senior Frontend Developer",
+        desiredExternal: "Independent Product Designer",
+        talentGrid: "Future Talent",
+        flightRisk: "Medium",
+        shortTraj: "Lead frontend implementation on new analytics dash.",
+        longTraj: "Lead Design Systems Engineer or Staff UX Engineer."
+      },
+      {
+        id: "emp-3",
+        name: "Aarav Naidoo",
+        function: "Data & Insights",
+        role: "Senior Data Scientist",
+        manager: "Devan P.",
+        tenure: "2 yrs",
+        gender: "Male",
+        race: "Indian/Asian",
+        strengths: ["Machine Learning", "Python", "Predictive Analytics", "Data Modelling"],
+        gaps: "Executive Stakeholder Storytelling, MLOps Pipelines",
+        managerSupport: "Exposure to EXCO reporting deck preparation.",
+        desiredInternal: "Head of Data Science",
+        desiredExternal: "Fintech ML Lead",
+        talentGrid: "Optimal Performer",
+        flightRisk: "Low",
+        shortTraj: "Lead end-to-end implementation of automated retail forecasting.",
+        longTraj: "VP of Artificial Intelligence and Data Platforms."
+      },
+      {
+        id: "emp-4",
+        name: "Thandi Adams",
+        function: "Product",
+        role: "Product Manager",
+        manager: "Sarah B.",
+        tenure: "8 mos",
+        gender: "Female",
+        race: "Coloured",
+        strengths: ["User Story Mapping", "Agile Execution", "Product Roadmapping"],
+        gaps: "Technical Architecture Trade-offs, Quantitative Discovery",
+        managerSupport: "Closer syncs with technical leads during sprint refinement.",
+        desiredInternal: "Senior Product Manager",
+        desiredExternal: "Global B2B SaaS Founder",
+        talentGrid: "New Appointment",
+        flightRisk: "Low",
+        shortTraj: "Full ownership of retail execution mobile module.",
+        longTraj: "Group Product Director."
+      }
+    ];
+
+    const vacanciesData = [
+      {
+        id: "vac-1",
+        title: "Principal Engineer",
+        function: "Engineering",
+        requiredSkills: ["System Architecture", "Microservices", "Node.js", "Team Mentorship"],
+        level: "Lead"
+      },
+      {
+        id: "vac-2",
+        title: "Senior Product Manager",
+        function: "Product",
+        requiredSkills: ["Agile Execution", "Product Roadmapping", "Stakeholder Management"],
+        level: "Senior"
+      },
+      {
+        id: "vac-3",
+        title: "Lead ML Engineer",
+        function: "Data & Insights",
+        requiredSkills: ["Machine Learning", "MLOps Pipelines", "Python"],
+        level: "Lead"
+      }
+    ];
+
+    // --- NAVIGATION TAB SWITCHING ---
+    function switchTab(target) {
+      ['hub', 'directory', 'vacancies'].forEach(tab => {
+        document.getElementById(`view-${tab}`).classList.add('hidden');
+        document.getElementById(`nav-${tab}`).className = 'px-4 py-2 text-sm font-semibold rounded text-gray-300 hover:text-white hover:bg-gray-800';
+      });
+
+      document.getElementById(`view-${target}`).classList.remove('hidden');
+      document.getElementById(`nav-${target}`).className = 'px-4 py-2 text-sm font-semibold rounded bg-[#0077C8] text-white';
+
+      if (target === 'directory') renderDirectory();
+      if (target === 'vacancies') renderVacancies();
+    }
+
+    // --- TALENT HUB: METRICS & CHARTS ---
+    function initTalentHub() {
+      document.getElementById('stat-headcount').textContent = talentData.length;
+      document.getElementById('stat-promotions').textContent = "3";
+      document.getElementById('stat-terminations').textContent = "1";
+      document.getElementById('stat-vacancies').textContent = vacanciesData.length;
+
+      // Group Counts
+      const functionCounts = {};
+      const gridCounts = {
+        'Ready Now Talent': 0, 'Future Talent': 0, 'Optimal Performer': 0,
+        'Poor Performer': 0, 'Below Average Performer': 0, 'New Appointment': 0
+      };
+      const genderCounts = {};
+      const raceCounts = {};
+
+      talentData.forEach(e => {
+        functionCounts[e.function] = (functionCounts[e.function] || 0) + 1;
+        if (gridCounts[e.talentGrid] !== undefined) gridCounts[e.talentGrid]++;
+        genderCounts[e.gender] = (genderCounts[e.gender] || 0) + 1;
+        raceCounts[e.race] = (raceCounts[e.race] || 0) + 1;
+      });
+
+      // Chart Config Defaults
+      Chart.defaults.color = '#94A3B8';
+      Chart.defaults.font.size = 11;
+
+      // 1. Function Pie
+      new Chart(document.getElementById('chartFunction'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(functionCounts),
+          datasets: [{
+            data: Object.values(functionCounts),
+            backgroundColor: ['#0077C8', '#0284C7', '#0EA5E9', '#38BDF8', '#7DD3FC']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      // 2. Talent Grid Distribution Bar
+      new Chart(document.getElementById('chartGrid'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(gridCounts),
+          datasets: [{
+            label: 'Employees',
+            data: Object.values(gridCounts),
+            backgroundColor: '#0077C8'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // 3. Gender Donut
+      new Chart(document.getElementById('chartGender'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(genderCounts),
+          datasets: [{
+            data: Object.values(genderCounts),
+            backgroundColor: ['#0077C8', '#64748B', '#334155']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      // 4. Race Bar
+      new Chart(document.getElementById('chartRace'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(raceCounts),
+          datasets: [{
+            label: 'Headcount',
+            data: Object.values(raceCounts),
+            backgroundColor: '#38BDF8'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // Insights Population
+      const strengthsDiv = document.getElementById('hub-strengths');
+      const uniqueStrengths = [...new Set(talentData.flatMap(e => e.strengths))];
+      strengthsDiv.innerHTML = uniqueStrengths.map(s => 
+        `<span class="px-2 py-1 bg-gray-900 border border-gray-700 text-xs text-blue-300 rounded">${s}</span>`
+      ).join('');
+
+      const gapsDiv = document.getElementById('hub-gaps');
+      gapsDiv.innerHTML = talentData.map(e => `<div>&bull; ${e.gaps}</div>`).slice(0, 4).join('');
+
+      const flightDiv = document.getElementById('hub-flight-risk');
+      flightDiv.innerHTML = talentData.filter(e => e.flightRisk !== 'Low').map(e => `
+        <div class="flex justify-between items-center bg-gray-950 p-2 rounded border border-gray-800">
+          <span class="text-white">${e.name}</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">${e.flightRisk} Risk</span>
+        </div>
+      `).join('') || '<div class="text-gray-500">No active elevated flight risks detected.</div>';
+    }
+
+    // --- DIRECTORY TREE ACCORDION ---
+    function renderDirectory() {
+      const container = document.getElementById('directory-tree');
+      container.innerHTML = '';
+
+      const structure = {};
+      talentData.forEach(e => {
+        if (!structure[e.function]) structure[e.function] = {};
+        if (!structure[e.function][e.role]) structure[e.function][e.role] = [];
+        structure[e.function][e.role].push(e);
+      });
+
+      Object.keys(structure).forEach((fnName, fnIndex) => {
+        const fnBox = document.createElement('div');
+        fnBox.className = 'border border-gray-800 rounded bg-[#0B111E] overflow-hidden';
+
+        const fnHeader = document.createElement('div');
+        fnHeader.className = 'p-4 bg-gray-950/70 border-b border-gray-800 font-bold text-white cursor-pointer flex justify-between hover:text-blue-400';
+        fnHeader.innerHTML = `<span>${fnName}</span><span class="text-xs text-gray-500 font-mono">Toggle</span>`;
+        fnHeader.onclick = () => {
+          document.getElementById(`fn-group-${fnIndex}`).classList.toggle('hidden');
+        };
+
+        const rolesContainer = document.createElement('div');
+        rolesContainer.id = `fn-group-${fnIndex}`;
+        rolesContainer.className = 'p-4 space-y-4';
+
+        Object.keys(structure[fnName]).forEach(roleName => {
+          const roleDiv = document.createElement('div');
+          roleDiv.className = 'pl-4 border-l border-gray-800 space-y-2';
+
+          const roleTitle = document.createElement('div');
+          roleTitle.className = 'text-xs uppercase text-gray-400 font-semibold tracking-wider';
+          roleTitle.textContent = roleName;
+          roleDiv.appendChild(roleTitle);
+
+          const empGrid = document.createElement('div');
+          empGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-3';
+
+          structure[fnName][roleName].forEach(emp => {
+            const card = document.createElement('div');
+            card.className = 'p-3 bg-[#05070B] rounded accent-border hover-glow cursor-pointer transition-all flex justify-between items-center';
+            card.onclick = () => openModal(emp.id);
+            card.innerHTML = `
+              <div>
+                <div class="text-sm font-semibold text-white">${emp.name}</div>
+                <div class="text-xs text-gray-400">${emp.talentGrid}</div>
+              </div>
+              <span class="text-xs text-blue-400 font-medium">Profile &rarr;</span>
+            `;
+            empGrid.appendChild(card);
+          });
+
+          roleDiv.appendChild(empGrid);
+          rolesContainer.appendChild(roleDiv);
+        });
+
+        fnBox.appendChild(fnHeader);
+        fnBox.appendChild(rolesContainer);
+        container.appendChild(fnBox);
+      });
+    }
+
+    // --- VACANCIES & MATCHMAKING ENGINE ---
+    function renderVacancies() {
+      const listContainer = document.getElementById('vacancies-list');
+      listContainer.innerHTML = '';
+
+      vacanciesData.forEach(vac => {
+        const item = document.createElement('div');
+        item.className = 'p-4 bg-[#0B111E] rounded accent-border hover-glow cursor-pointer transition-all';
+        item.onclick = () => runMatchmaker(vac);
+        item.innerHTML = `
+          <div class="text-xs text-blue-400 uppercase font-semibold">${vac.function}</div>
+          <div class="text-base font-bold text-white mt-1">${vac.title}</div>
+          <div class="text-xs text-gray-400 mt-2">Required: ${vac.requiredSkills.join(', ')}</div>
+        `;
+        listContainer.appendChild(item);
+      });
+
+      runMatchmaker(vacanciesData[0]);
+    }
+
+    function runMatchmaker(vac) {
+      const panel = document.getElementById('matchmaker-content');
+      
+      const scoredEmployees = talentData.map(emp => {
+        let matchScore = 0;
+        const matchingSkills = [];
+
+        vac.requiredSkills.forEach(req => {
+          if (emp.strengths.some(s => s.toLowerCase().includes(req.toLowerCase()))) {
+            matchScore += 25;
+            matchingSkills.push(req);
+          }
+        });
+
+        if (emp.desiredInternal.toLowerCase().includes(vac.title.toLowerCase())) {
+          matchScore += 25;
+        }
+
+        return { emp, matchScore, matchingSkills };
+      }).sort((a, b) => b.matchScore - a.matchScore);
+
+      panel.innerHTML = `
+        <div class="border-b border-gray-800 pb-4 mb-4">
+          <div class="text-xs uppercase text-blue-400 font-bold">Target Vacancy</div>
+          <div class="text-lg font-bold text-white">${vac.title} &bull; ${vac.function}</div>
+        </div>
+        <div class="space-y-3">
+          ${scoredEmployees.map(({ emp, matchScore, matchingSkills }) => `
+            <div onclick="openModal('${emp.id}')" class="p-3 bg-[#05070B] rounded accent-border hover-glow cursor-pointer flex justify-between items-center transition-all">
+              <div>
+                <div class="text-sm font-semibold text-white">${emp.name} <span class="text-xs text-gray-400">(${emp.role})</span></div>
+                <div class="text-xs text-gray-400 mt-1">Matched Competencies: ${matchingSkills.join(', ') || 'None identified'}</div>
+                <div class="text-xs text-blue-300">Aspiration: ${emp.desiredInternal}</div>
+              </div>
+              <div class="text-right">
+                <span class="text-base font-mono font-bold ${matchScore >= 50 ? 'text-blue-400' : 'text-gray-500'}">${matchScore}%</span>
+                <div class="text-[10px] text-gray-500">Compatibility</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // --- MODAL CONTROLS ---
+    function openModal(empId) {
+      const emp = talentData.find(e => e.id === empId);
+      if (!emp) return;
+
+      document.getElementById('modal-name').textContent = emp.name;
+      document.getElementById('modal-grid-tag').textContent = emp.talentGrid;
+      document.getElementById('modal-role').textContent = emp.role;
+      document.getElementById('modal-function').textContent = emp.function;
+      document.getElementById('modal-manager').textContent = emp.manager;
+      document.getElementById('modal-strengths').textContent = emp.strengths.join(', ');
+      document.getElementById('modal-gaps').textContent = emp.gaps;
+      document.getElementById('modal-support').textContent = emp.managerSupport;
+      document.getElementById('modal-internal-role').textContent = emp.desiredInternal;
+      document.getElementById('modal-external-role').textContent = emp.desiredExternal;
+      document.getElementById('modal-short-traj').textContent = emp.shortTraj;
+      document.getElementById('modal-long-traj').textContent = emp.longTraj;
+
+      document.getElementById('profile-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('profile-modal').classList.add('hidden');
+    }
+
+    window.onload = initTalentHub;
+  </script>
+</body>
+</html>
