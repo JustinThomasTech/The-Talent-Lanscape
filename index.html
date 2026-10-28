@@ -199,109 +199,25 @@
   </div>
 
   <script>
-    // --- DATA STATE (Can be swapped to fetch from Google Sheet API) ---
-    const talentData = [
-      {
-        id: "emp-1",
-        name: "Sipho Ndlovu",
-        function: "Engineering",
-        role: "Senior Backend Developer",
-        manager: "Kgomotso M.",
-        tenure: "3 yrs",
-        gender: "Male",
-        race: "Black African",
-        strengths: ["Node.js", "System Architecture", "Microservices", "PostgreSQL"],
-        gaps: "Enterprise Cloud Architecture (GCP), Team Mentorship",
-        managerSupport: "Requires allocation of technical lead duties on Q3 platform rework.",
-        desiredInternal: "Principal Engineer",
-        desiredExternal: "Staff Infrastructure Architect",
-        talentGrid: "Ready Now Talent",
-        flightRisk: "Low",
-        shortTraj: "Step up to Technical Lead over Payments API project.",
-        longTraj: "Principal Architect responsible for enterprise-wide infrastructure."
-      },
-      {
-        id: "emp-2",
-        name: "Chloe Van Der Merwe",
-        function: "Engineering",
-        role: "Mid-Level Frontend Developer",
-        manager: "Kgomotso M.",
-        tenure: "1.5 yrs",
-        gender: "Female",
-        race: "White",
-        strengths: ["React", "UI/UX Prototyping", "Tailwind CSS", "TypeScript"],
-        gaps: "Testing Automation (Cypress), High-Load State Optimization",
-        managerSupport: "Needs senior code review support and testing framework training.",
-        desiredInternal: "Senior Frontend Developer",
-        desiredExternal: "Independent Product Designer",
-        talentGrid: "Future Talent",
-        flightRisk: "Medium",
-        shortTraj: "Lead frontend implementation on new analytics dash.",
-        longTraj: "Lead Design Systems Engineer or Staff UX Engineer."
-      },
-      {
-        id: "emp-3",
-        name: "Aarav Naidoo",
-        function: "Data & Insights",
-        role: "Senior Data Scientist",
-        manager: "Devan P.",
-        tenure: "2 yrs",
-        gender: "Male",
-        race: "Indian/Asian",
-        strengths: ["Machine Learning", "Python", "Predictive Analytics", "Data Modelling"],
-        gaps: "Executive Stakeholder Storytelling, MLOps Pipelines",
-        managerSupport: "Exposure to EXCO reporting deck preparation.",
-        desiredInternal: "Head of Data Science",
-        desiredExternal: "Fintech ML Lead",
-        talentGrid: "Optimal Performer",
-        flightRisk: "Low",
-        shortTraj: "Lead end-to-end implementation of automated retail forecasting.",
-        longTraj: "VP of Artificial Intelligence and Data Platforms."
-      },
-      {
-        id: "emp-4",
-        name: "Thandi Adams",
-        function: "Product",
-        role: "Product Manager",
-        manager: "Sarah B.",
-        tenure: "8 mos",
-        gender: "Female",
-        race: "Coloured",
-        strengths: ["User Story Mapping", "Agile Execution", "Product Roadmapping"],
-        gaps: "Technical Architecture Trade-offs, Quantitative Discovery",
-        managerSupport: "Closer syncs with technical leads during sprint refinement.",
-        desiredInternal: "Senior Product Manager",
-        desiredExternal: "Global B2B SaaS Founder",
-        talentGrid: "New Appointment",
-        flightRisk: "Low",
-        shortTraj: "Full ownership of retail execution mobile module.",
-        longTraj: "Group Product Director."
-      }
-    ];
+    // --- LIVE DATA CONNECTION ---
+    let talentData = [];
+    let vacanciesData = [];
 
-    const vacanciesData = [
-      {
-        id: "vac-1",
-        title: "Principal Engineer",
-        function: "Engineering",
-        requiredSkills: ["System Architecture", "Microservices", "Node.js", "Team Mentorship"],
-        level: "Lead"
-      },
-      {
-        id: "vac-2",
-        title: "Senior Product Manager",
-        function: "Product",
-        requiredSkills: ["Agile Execution", "Product Roadmapping", "Stakeholder Management"],
-        level: "Senior"
-      },
-      {
-        id: "vac-3",
-        title: "Lead ML Engineer",
-        function: "Data & Insights",
-        requiredSkills: ["Machine Learning", "MLOps Pipelines", "Python"],
-        level: "Lead"
+    async function loadLiveSheetData() {
+      try {
+        const response = await fetch("https://script.google.com/a/macros/smollan.tech/s/AKfycbyFfaWPl04yDOlKSXJ0GsmyNZtBb01CqVCQOe-z64PntrTY6vYPyzkgNr_dkBhVlhZjPg/exec");
+        const data = await response.json();
+        
+        talentData = data.team;
+        vacanciesData = data.vacancies;
+        
+        // Initialize the dashboards once data is loaded
+        initTalentHub();
+      } catch (error) {
+        console.error("Error loading data from Google Sheets:", error);
+        document.getElementById('stat-headcount').textContent = "ERROR";
       }
-    ];
+    }
 
     // --- NAVIGATION TAB SWITCHING ---
     function switchTab(target) {
@@ -319,10 +235,13 @@
 
     // --- TALENT HUB: METRICS & CHARTS ---
     function initTalentHub() {
-      document.getElementById('stat-headcount').textContent = talentData.length;
-      document.getElementById('stat-promotions').textContent = "3";
-      document.getElementById('stat-terminations').textContent = "1";
-      document.getElementById('stat-vacancies').textContent = vacanciesData.length;
+      // Basic counts check to handle empty data gracefully
+      document.getElementById('stat-headcount').textContent = talentData ? talentData.length : 0;
+      document.getElementById('stat-promotions').textContent = "3"; // This can be made dynamic later
+      document.getElementById('stat-terminations').textContent = "1"; // This can be made dynamic later
+      document.getElementById('stat-vacancies').textContent = vacanciesData ? vacanciesData.length : 0;
+
+      if (!talentData || talentData.length === 0) return;
 
       // Group Counts
       const functionCounts = {};
@@ -335,7 +254,15 @@
 
       talentData.forEach(e => {
         functionCounts[e.function] = (functionCounts[e.function] || 0) + 1;
-        if (gridCounts[e.talentGrid] !== undefined) gridCounts[e.talentGrid]++;
+        
+        // Only count valid grid entries
+        if (gridCounts[e.talentGrid] !== undefined) {
+           gridCounts[e.talentGrid]++;
+        } else if (e.talentGrid && e.talentGrid !== "Pending") {
+           // Capture custom grid entries if added
+           gridCounts[e.talentGrid] = (gridCounts[e.talentGrid] || 0) + 1;
+        }
+
         genderCounts[e.gender] = (genderCounts[e.gender] || 0) + 1;
         raceCounts[e.race] = (raceCounts[e.race] || 0) + 1;
       });
@@ -343,6 +270,14 @@
       // Chart Config Defaults
       Chart.defaults.color = '#94A3B8';
       Chart.defaults.font.size = 11;
+      
+      // Cleanup existing charts if reloading
+      ['chartFunction', 'chartGrid', 'chartGender', 'chartRace'].forEach(id => {
+          let chartStatus = Chart.getChart(id);
+          if (chartStatus != undefined) {
+            chartStatus.destroy();
+          }
+      });
 
       // 1. Function Pie
       new Chart(document.getElementById('chartFunction'), {
@@ -408,18 +343,39 @@
         }
       });
 
-      // Insights Population
+      // Insights Population - Strengths
       const strengthsDiv = document.getElementById('hub-strengths');
-      const uniqueStrengths = [...new Set(talentData.flatMap(e => e.strengths))];
+      const allStrengths = talentData.flatMap(e => e.strengths || []);
+      // Filter out blanks
+      const validStrengths = allStrengths.filter(s => s && s.trim() !== "");
+      const uniqueStrengths = [...new Set(validStrengths)];
+      
       strengthsDiv.innerHTML = uniqueStrengths.map(s => 
         `<span class="px-2 py-1 bg-gray-900 border border-gray-700 text-xs text-blue-300 rounded">${s}</span>`
-      ).join('');
+      ).join('') || '<span class="text-xs text-gray-500">No strengths logged yet.</span>';
 
+      // Insights Population - Gaps (with color coding requested)
       const gapsDiv = document.getElementById('hub-gaps');
-      gapsDiv.innerHTML = talentData.map(e => `<div>&bull; ${e.gaps}</div>`).slice(0, 4).join('');
+      const gapColors = [
+        'border-purple-500/40 text-purple-300', 
+        'border-emerald-500/40 text-emerald-300', 
+        'border-rose-500/40 text-rose-300', 
+        'border-amber-500/40 text-amber-300'
+      ];
+      
+      // Filter out "None logged" or empty ones so we don't display empty boxes
+      const actualGaps = talentData.filter(e => e.gaps && e.gaps !== "None logged");
 
+      gapsDiv.innerHTML = actualGaps.slice(0, 4).map((e, i) => `
+        <div class="px-3 py-2 bg-[#05070B] rounded border ${gapColors[i % gapColors.length]} mb-2">
+          <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">${e.name}</span>
+          <span class="text-sm text-gray-300">${e.gaps}</span>
+        </div>
+      `).join('') || '<span class="text-xs text-gray-500">No gaps logged yet.</span>';
+
+      // Insights Population - Flight Risk
       const flightDiv = document.getElementById('hub-flight-risk');
-      flightDiv.innerHTML = talentData.filter(e => e.flightRisk !== 'Low').map(e => `
+      flightDiv.innerHTML = talentData.filter(e => e.flightRisk && e.flightRisk !== 'Low').map(e => `
         <div class="flex justify-between items-center bg-gray-950 p-2 rounded border border-gray-800">
           <span class="text-white">${e.name}</span>
           <span class="text-xs px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">${e.flightRisk} Risk</span>
@@ -431,6 +387,11 @@
     function renderDirectory() {
       const container = document.getElementById('directory-tree');
       container.innerHTML = '';
+      
+      if (!talentData || talentData.length === 0) {
+          container.innerHTML = '<div class="text-gray-500">No team data available. Check your Google Sheet connection.</div>';
+          return;
+      }
 
       const structure = {};
       talentData.forEach(e => {
@@ -494,42 +455,72 @@
     function renderVacancies() {
       const listContainer = document.getElementById('vacancies-list');
       listContainer.innerHTML = '';
+      
+      if (!vacanciesData || vacanciesData.length === 0) {
+          listContainer.innerHTML = '<div class="text-gray-500">No active vacancies loaded.</div>';
+          document.getElementById('matchmaker-content').innerHTML = '';
+          return;
+      }
 
       vacanciesData.forEach(vac => {
         const item = document.createElement('div');
         item.className = 'p-4 bg-[#0B111E] rounded accent-border hover-glow cursor-pointer transition-all';
         item.onclick = () => runMatchmaker(vac);
+        
+        // Handle potentially missing requiredSkills
+        const skillsString = (vac.requiredSkills && vac.requiredSkills.length > 0) 
+            ? vac.requiredSkills.join(', ') 
+            : 'None specified';
+            
         item.innerHTML = `
           <div class="text-xs text-blue-400 uppercase font-semibold">${vac.function}</div>
           <div class="text-base font-bold text-white mt-1">${vac.title}</div>
-          <div class="text-xs text-gray-400 mt-2">Required: ${vac.requiredSkills.join(', ')}</div>
+          <div class="text-xs text-gray-400 mt-2">Required: ${skillsString}</div>
         `;
         listContainer.appendChild(item);
       });
 
+      // Default to showing matchmaker for the first vacancy
       runMatchmaker(vacanciesData[0]);
     }
 
     function runMatchmaker(vac) {
       const panel = document.getElementById('matchmaker-content');
       
+      if (!talentData || talentData.length === 0) {
+          panel.innerHTML = '<div class="text-gray-500">No internal talent data available to match.</div>';
+          return;
+      }
+      
       const scoredEmployees = talentData.map(emp => {
         let matchScore = 0;
         const matchingSkills = [];
 
-        vac.requiredSkills.forEach(req => {
-          if (emp.strengths.some(s => s.toLowerCase().includes(req.toLowerCase()))) {
-            matchScore += 25;
-            matchingSkills.push(req);
-          }
-        });
-
-        if (emp.desiredInternal.toLowerCase().includes(vac.title.toLowerCase())) {
-          matchScore += 25;
+        // Check skills matching
+        if (vac.requiredSkills && emp.strengths) {
+            vac.requiredSkills.forEach(req => {
+              if (emp.strengths.some(s => s.toLowerCase().includes(req.toLowerCase()))) {
+                matchScore += 25;
+                matchingSkills.push(req);
+              }
+            });
         }
+
+        // Check internal aspiration matching
+        if (emp.desiredInternal && vac.title) {
+            if (emp.desiredInternal.toLowerCase().includes(vac.title.toLowerCase())) {
+              matchScore += 25;
+            }
+        }
+        
+        // Cap score at 100 for display
+        matchScore = Math.min(matchScore, 100);
 
         return { emp, matchScore, matchingSkills };
       }).sort((a, b) => b.matchScore - a.matchScore);
+      
+      // Optional: Only show top 5 or 10 matches, or filter out zero scores
+      // For now, we show all so you can test it.
 
       panel.innerHTML = `
         <div class="border-b border-gray-800 pb-4 mb-4">
@@ -564,7 +555,10 @@
       document.getElementById('modal-role').textContent = emp.role;
       document.getElementById('modal-function').textContent = emp.function;
       document.getElementById('modal-manager').textContent = emp.manager;
-      document.getElementById('modal-strengths').textContent = emp.strengths.join(', ');
+      
+      // Handle potentially empty arrays
+      document.getElementById('modal-strengths').textContent = (emp.strengths && emp.strengths.length > 0) ? emp.strengths.join(', ') : 'None listed';
+      
       document.getElementById('modal-gaps').textContent = emp.gaps;
       document.getElementById('modal-support').textContent = emp.managerSupport;
       document.getElementById('modal-internal-role').textContent = emp.desiredInternal;
@@ -579,7 +573,8 @@
       document.getElementById('profile-modal').classList.add('hidden');
     }
 
-    window.onload = initTalentHub;
+    // Fire the data fetch on load
+    window.onload = loadLiveSheetData;
   </script>
 </body>
 </html>
